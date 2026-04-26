@@ -10,6 +10,7 @@ function Assignments() {
   const [grades, setGrades] = useState([])
   const [filterGrade, setFilterGrade] = useState('')
   const [showBuilder, setShowBuilder] = useState(false)
+  const [viewSubmissions, setViewSubmissions] = useState(null)
   const navigate = useNavigate()
   const { showToast } = useToast()
 
@@ -87,6 +88,15 @@ function Assignments() {
     )
   }
 
+  if (viewSubmissions) {
+    return (
+      <SubmissionsViewer
+        assignment={viewSubmissions}
+        onBack={() => setViewSubmissions(null)}
+      />
+    )
+  }
+
   return (
     <TeacherLayout>
       <header className="page-header">
@@ -150,6 +160,14 @@ function Assignments() {
                     onClick={() => handlePublish(a.id)}
                   >
                     نشر
+                  </button>
+                )}
+                {a.is_published && a.submission_count > 0 && (
+                  <button
+                    className="btn-action btn-view-subs"
+                    onClick={() => setViewSubmissions(a)}
+                  >
+                    التسليمات ({a.submission_count})
                   </button>
                 )}
               </div>
@@ -425,6 +443,93 @@ function AssignmentBuilder({ grades, onBack }) {
           </button>
         </div>
       </div>
+    </TeacherLayout>
+  )
+}
+
+// submissions viewer
+function SubmissionsViewer({ assignment, onBack }) {
+  const [submissions, setSubmissions] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadSubmissions()
+  }, [])
+
+  async function loadSubmissions() {
+    try {
+      const data = await api(`/api/assignments/${assignment.id}/submissions`)
+      setSubmissions(data || [])
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function formatDate(dateStr) {
+    return new Date(dateStr).toLocaleDateString('ar-OM', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
+  function getScoreColor(percentage) {
+    if (percentage >= 80) return 'var(--success)'
+    if (percentage >= 50) return 'var(--accent-gold)'
+    return 'var(--error)'
+  }
+
+  return (
+    <TeacherLayout>
+      <header className="page-header">
+        <div className="header-row">
+          <h1>تسليمات: {assignment.title}</h1>
+          <button className="btn-secondary" onClick={onBack}>رجوع</button>
+        </div>
+      </header>
+
+      {loading ? (
+        <p className="empty-state">جاري التحميل...</p>
+      ) : submissions.length === 0 ? (
+        <p className="empty-state">لا توجد تسليمات</p>
+      ) : (
+        <div className="submissions-table-wrap">
+          <table className="students-table">
+            <thead>
+              <tr>
+                <th>الطالب</th>
+                <th>الدرجة</th>
+                <th>النسبة</th>
+                <th>تاريخ التسليم</th>
+              </tr>
+            </thead>
+            <tbody>
+              {submissions.map((s) => (
+                <tr key={s.id}>
+                  <td className="student-name">{s.student_name}</td>
+                  <td>{s.score} / {s.total_questions}</td>
+                  <td>
+                    <div className="score-bar-wrap">
+                      <div
+                        className="score-bar-fill"
+                        style={{
+                          width: `${s.percentage}%`,
+                          backgroundColor: getScoreColor(s.percentage),
+                        }}
+                      />
+                      <span className="score-bar-label">{s.percentage}%</span>
+                    </div>
+                  </td>
+                  <td className="student-date">{formatDate(s.submitted_at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </TeacherLayout>
   )
 }

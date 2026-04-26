@@ -6,6 +6,7 @@ import Assignments from './pages/Assignments'
 import StudentRegister from './pages/StudentRegister'
 import StudentLogin from './pages/StudentLogin'
 import StudentDashboard from './pages/StudentDashboard'
+import Quiz from './pages/Quiz'
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
       <Route path="/register" element={<StudentRegister />} />
       <Route path="/student/login" element={<StudentLogin />} />
       <Route path="/student/dashboard" element={<StudentDashboard />} />
+      <Route path="/student/quiz/:id" element={<Quiz />} />
     </Routes>
   )
 }
