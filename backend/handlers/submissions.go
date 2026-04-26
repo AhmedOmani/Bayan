@@ -218,7 +218,7 @@ func (h *Handler) GetSubmission(w http.ResponseWriter, r *http.Request) {
 
 	// get all questions for this assignment with the student's answers
 	rows, err := h.db.Query(`
-		SELECT q.question_text, q.explanation, q.display_order,
+		SELECT q.id, q.question_text, q.explanation, q.display_order,
 			ans.selected_choice_id, ans.is_correct
 		FROM answers ans
 		JOIN questions q ON ans.question_id = q.id
@@ -249,29 +249,23 @@ func (h *Handler) GetSubmission(w http.ResponseWriter, r *http.Request) {
 	var questions []questionDetail
 
 	for rows.Next() {
-		var qText, explanation, selectedChoiceID string
+		var questionID, qText, explanation, selectedChoiceID string
 		var displayOrder int
 		var isCorrect bool
 
-		if err := rows.Scan(&qText, &explanation, &displayOrder, &selectedChoiceID, &isCorrect); err != nil {
+		if err := rows.Scan(&questionID, &qText, &explanation, &displayOrder, &selectedChoiceID, &isCorrect); err != nil {
 			continue
 		}
 
-		// get all choices for this question
+		// simple query using question_id directly
 		cRows, err := h.db.Query(`
-			SELECT c.id, c.choice_text, c.is_correct
-			FROM choices c
-			JOIN answers ans ON ans.question_id = c.question_id
-			WHERE ans.submission_id = $1 AND ans.question_id = (
-				SELECT question_id FROM answers WHERE submission_id = $1 AND selected_choice_id = $2
-				LIMIT 1
-			)
-			ORDER BY c.display_order
-		`, submissionID, selectedChoiceID)
+			SELECT id, choice_text, is_correct
+			FROM choices
+			WHERE question_id = $1
+			ORDER BY display_order
+		`, questionID)
 
-		// simpler approach - get question_id from answer, then get choices
 		if err != nil {
-			// fallback
 			questions = append(questions, questionDetail{
 				Number:      displayOrder,
 				Text:        qText,
