@@ -1,0 +1,277 @@
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* assignment grid */
+.assignments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.assignment-card {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: all var(--transition);
+}
+
+.assignment-card:hover {
+  border-color: var(--accent-gold);
+}
+
+.assignment-card.draft {
+  opacity: 0.8;
+  border-style: dashed;
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot.published {
+  background: var(--success);
+}
+
+.status-dot.draft-dot {
+  background: var(--accent-gold);
+}
+
+.card-status-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.card-title {
+  font-family: var(--font-content);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.card-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.meta-item {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+}
+
+.card-deadline {
+  font-size: 0.82rem;
+}
+
+.deadline-text {
+  color: var(--text-secondary);
+}
+
+.deadline-text.expired {
+  color: var(--error);
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.btn-publish {
+  background: rgba(212, 168, 83, 0.15);
+  color: var(--accent-gold);
+  padding: 8px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: all var(--transition);
+}
+
+.btn-publish:hover {
+  background: rgba(212, 168, 83, 0.25);
+}
+
+/* builder */
+.builder {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.builder-meta {
+  padding: 28px;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 768px) {
+  .meta-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 60px;
+  font-family: var(--font-primary);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-header h2 {
+  font-family: var(--font-content);
+  font-size: 1.15rem;
+}
+
+.btn-sm {
+  padding: 6px 16px;
+  font-size: 0.82rem;
+}
+
+.btn-lg {
+  padding: 14px 32px;
+  font-size: 1rem;
+}
+
+/* question card */
+.question-card {
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.question-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.question-number {
+  font-family: var(--font-content);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--accent-gold);
+}
+
+.btn-remove {
+  font-size: 0.8rem;
+  color: var(--error);
+  opacity: 0.7;
+  transition: opacity var(--transition);
+}
+
+.btn-remove:hover {
+  opacity: 1;
+}
+
+/* choices */
+.choices-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.choices-section > label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.choice-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.choice-radio {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all var(--transition);
+  color: transparent;
+}
+
+.choice-radio.correct {
+  border-color: var(--success);
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--success);
+}
+
+.choice-input {
+  flex: 1;
+}
+
+.btn-remove-choice {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-remove-choice:hover {
+  color: var(--error);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.btn-add-choice {
+  font-size: 0.82rem;
+  color: var(--accent-gold);
+  align-self: flex-start;
+  padding: 4px 0;
+  transition: opacity var(--transition);
+}
+
+.btn-add-choice:hover {
+  opacity: 0.7;
+}
+
+.builder-footer {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 32px;
+}
+
+.builder-footer .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

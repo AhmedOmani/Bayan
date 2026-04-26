@@ -66,6 +66,17 @@ func main() {
 		r.Patch("/api/students/{id}/approve", h.ApproveStudent)
 		r.Patch("/api/students/{id}/block", h.BlockStudent)
 		r.Patch("/api/students/{id}/grade", h.ChangeStudentGrade)
+
+		r.Post("/api/assignments", h.CreateAssignment)
+		r.Post("/api/assignments/{id}/publish", h.PublishAssignment)
+	})
+
+	// authenticated routes (teacher or student)
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.Auth(cfg.JWTSecret))
+
+		r.Get("/api/assignments", h.ListAssignments)
+		r.Get("/api/assignments/{id}", h.GetAssignment)
 	})
 
 	log.Printf("bayan server running on port %s", cfg.Port)

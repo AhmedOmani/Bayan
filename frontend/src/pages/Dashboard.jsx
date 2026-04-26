@@ -7,7 +7,7 @@ import './Dashboard.css'
 function Dashboard() {
   const [user, setUser] = useState(null)
   const [grades, setGrades] = useState([])
-  const [stats, setStats] = useState({ students: 0, pending: 0 })
+  const [stats, setStats] = useState({ students: 0, pending: 0, assignments: 0 })
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -34,7 +34,14 @@ function Dashboard() {
     try {
       const all = await api('/api/students')
       const pending = (all || []).filter((s) => s.status === 'PENDING')
-      setStats({ students: (all || []).length, pending: pending.length })
+      let assignmentCount = 0
+      try {
+        const assignments = await api('/api/assignments')
+        assignmentCount = (assignments || []).length
+      } catch (e) {
+        // ignore
+      }
+      setStats({ students: (all || []).length, pending: pending.length, assignments: assignmentCount })
     } catch (err) {
       console.error('failed to load stats:', err)
     }
@@ -63,7 +70,7 @@ function Dashboard() {
           <span className="stat-label">بانتظار الموافقة</span>
         </div>
         <div className="stat-card card">
-          <span className="stat-value">0</span>
+          <span className="stat-value">{stats.assignments}</span>
           <span className="stat-label">الواجبات</span>
         </div>
       </div>
