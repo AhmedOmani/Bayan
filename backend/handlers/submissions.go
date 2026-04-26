@@ -194,3 +194,130 @@ func (h *Handler) ListSubmissions(w http.ResponseWriter, r *http.Request) {
 
 	helpers.JSON(w, http.StatusOK, items)
 }
+
+func (h *Handler) GetSubmission(w http.ResponseWriter, r *http.Request) {
+	submissionID := chi.URLParam(r, "submissionId")
+
+	// get submission info
+	var studentName string
+	var score, totalQuestions int
+	var submittedAt, assignmentTitle string
+
+	err := h.db.QueryRow(`
+		SELECT st.full_name, s.score, s.total_questions, s.submitted_at, a.title
+		FROM submissions s
+		JOIN students st ON s.student_id = st.id
+		JOIN assignments a ON s.assignment_id = a.id
+		WHERE s.id = $1
+	`, submissionID).Scan(&studentName, &score, &totalQuestions, &submittedAt, &assignmentTitle)
+
+	if err != nil {
+		helpers.Error(w, http.StatusNotFound, "submission not found")
+		return
+	}
+
+	// get all questions for this assignment with the student's answers
+	rows, err := h.db.Query(`
+		SELECT q.question_text, q.explanation, q.display_order,
+			ans.selected_choice_id, ans.is_correct
+		FROM answers ans
+		JOIN questions q ON ans.question_id = q.id
+		WHERE ans.submission_id = $1
+		ORDER BY q.display_order
+	`, submissionID)
+
+	if err != nil {
+		helpers.Error(w, http.StatusInternalServerError, "something went wrong")
+		return
+	}
+	defer rows.Close()
+
+	type choiceDetail struct {
+		Text      string `json:"text"`
+		IsCorrect bool   `json:"is_correct"`
+		Selected  bool   `json:"selected"`
+	}
+
+	type questionDetail struct {
+		Number      int            `json:"number"`
+		Text        string         `json:"text"`
+		Explanation string         `json:"explanation"`
+		IsCorrect   bool           `json:"is_correct"`
+		Choices     []choiceDetail `json:"choices"`
+	}
+
+	var questions []questionDetail
+
+	for rows.Next() {
+		var qText, explanation, selectedChoiceID string
+		var displayOrder int
+		var isCorrect bool
+
+		if err := rows.Scan(&qText, &explanation, &displayOrder, &selectedChoiceID, &isCorrect); err != nil {
+			continue
+		}
+
+		// get all choices for this question
+		cRows, err := h.db.Query(`
+			SELECT c.id, c.choice_text, c.is_correct
+			FROM choices c
+			JOIN answers ans ON ans.question_id = c.question_id
+			WHERE ans.submission_id = $1 AND ans.question_id = (
+				SELECT question_id FROM answers WHERE submission_id = $1 AND selected_choice_id = $2
+				LIMIT 1
+			)
+			ORDER BY c.display_order
+		`, submissionID, selectedChoiceID)
+
+		// simpler approach - get question_id from answer, then get choices
+		if err != nil {
+			// fallback
+			questions = append(questions, questionDetail{
+				Number:      displayOrder,
+				Text:        qText,
+				Explanation: explanation,
+				IsCorrect:   isCorrect,
+				Choices:     []choiceDetail{},
+			})
+			continue
+		}
+
+		var choices []choiceDetail
+		for cRows.Next() {
+			var cID, cText string
+			var cIsCorrect bool
+			if err := cRows.Scan(&cID, &cText, &cIsCorrect); err != nil {
+				continue
+			}
+			choices = append(choices, choiceDetail{
+				Text:      cText,
+				IsCorrect: cIsCorrect,
+				Selected:  cID == selectedChoiceID,
+			})
+		}
+		cRows.Close()
+
+		questions = append(questions, questionDetail{
+			Number:      displayOrder,
+			Text:        qText,
+			Explanation: explanation,
+			IsCorrect:   isCorrect,
+			Choices:     choices,
+		})
+	}
+
+	percentage := 0
+	if totalQuestions > 0 {
+		percentage = (score * 100) / totalQuestions
+	}
+
+	helpers.JSON(w, http.StatusOK, map[string]interface{}{
+		"student_name":    studentName,
+		"assignment_title": assignmentTitle,
+		"score":           score,
+		"total_questions":  totalQuestions,
+		"percentage":      percentage,
+		"submitted_at":    submittedAt,
+		"questions":       questions,
+	})
+}

@@ -451,6 +451,9 @@ function AssignmentBuilder({ grades, onBack }) {
 function SubmissionsViewer({ assignment, onBack }) {
   const [submissions, setSubmissions] = useState([])
   const [loading, setLoading] = useState(true)
+  const [expanded, setExpanded] = useState(null)
+  const [paperData, setPaperData] = useState(null)
+  const [paperLoading, setPaperLoading] = useState(false)
 
   useEffect(() => {
     loadSubmissions()
@@ -464,6 +467,25 @@ function SubmissionsViewer({ assignment, onBack }) {
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function togglePaper(submissionId) {
+    if (expanded === submissionId) {
+      setExpanded(null)
+      setPaperData(null)
+      return
+    }
+
+    setExpanded(submissionId)
+    setPaperLoading(true)
+    try {
+      const data = await api(`/api/submissions/${submissionId}`)
+      setPaperData(data)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setPaperLoading(false)
     }
   }
 
@@ -482,6 +504,12 @@ function SubmissionsViewer({ assignment, onBack }) {
     return 'var(--error)'
   }
 
+  function getEmoji(percentage) {
+    if (percentage >= 80) return '🌟'
+    if (percentage >= 50) return '👍'
+    return '💪'
+  }
+
   return (
     <TeacherLayout>
       <header className="page-header">
@@ -496,38 +524,82 @@ function SubmissionsViewer({ assignment, onBack }) {
       ) : submissions.length === 0 ? (
         <p className="empty-state">لا توجد تسليمات</p>
       ) : (
-        <div className="submissions-table-wrap">
-          <table className="students-table">
-            <thead>
-              <tr>
-                <th>الطالب</th>
-                <th>الدرجة</th>
-                <th>النسبة</th>
-                <th>تاريخ التسليم</th>
-              </tr>
-            </thead>
-            <tbody>
-              {submissions.map((s) => (
-                <tr key={s.id}>
-                  <td className="student-name">{s.student_name}</td>
-                  <td>{s.score} / {s.total_questions}</td>
-                  <td>
-                    <div className="score-bar-wrap">
-                      <div
-                        className="score-bar-fill"
-                        style={{
-                          width: `${s.percentage}%`,
-                          backgroundColor: getScoreColor(s.percentage),
-                        }}
-                      />
-                      <span className="score-bar-label">{s.percentage}%</span>
+        <div className="sub-cards-list">
+          {submissions.map((s) => (
+            <div key={s.id} className="sub-card-wrapper">
+              <div
+                className={`sub-card glass ${expanded === s.id ? 'expanded' : ''}`}
+                onClick={() => togglePaper(s.id)}
+              >
+                <div className="sub-card-avatar">
+                  {s.student_name.charAt(0)}
+                </div>
+
+                <div className="sub-card-info">
+                  <span className="sub-card-name">{s.student_name}</span>
+                  <span className="sub-card-date">{formatDate(s.submitted_at)}</span>
+                </div>
+
+                <div className="sub-card-score">
+                  <span className="sub-score-emoji">{getEmoji(s.percentage)}</span>
+                  <span
+                    className="sub-score-num"
+                    style={{ color: getScoreColor(s.percentage) }}
+                  >
+                    {s.percentage}%
+                  </span>
+                  <span className="sub-score-frac">{s.score}/{s.total_questions}</span>
+                </div>
+
+                <span className="sub-card-arrow">{expanded === s.id ? '▲' : '▼'}</span>
+              </div>
+
+              {expanded === s.id && (
+                <div className="sub-paper glass">
+                  {paperLoading ? (
+                    <p className="paper-loading">جاري تحميل الورقة...</p>
+                  ) : paperData ? (
+                    <div className="paper-questions">
+                      {paperData.questions.map((q, i) => (
+                        <div key={i} className={`paper-q ${q.is_correct ? 'q-correct' : 'q-wrong'}`}>
+                          <div className="paper-q-header">
+                            <span className="paper-q-num">سؤال {q.number}</span>
+                            <span className={`paper-q-badge ${q.is_correct ? 'badge-correct' : 'badge-wrong'}`}>
+                              {q.is_correct ? '✓ صحيح' : '✕ خطأ'}
+                            </span>
+                          </div>
+
+                          <p className="paper-q-text">{q.text}</p>
+
+                          <div className="paper-choices">
+                            {q.choices.map((c, j) => {
+                              let cls = 'paper-choice'
+                              if (c.selected && c.is_correct) cls += ' choice-correct-selected'
+                              else if (c.selected && !c.is_correct) cls += ' choice-wrong-selected'
+                              else if (c.is_correct) cls += ' choice-correct-hint'
+
+                              return (
+                                <div key={j} className={cls}>
+                                  <span className="paper-choice-text">{c.text}</span>
+                                  {c.selected && <span className="paper-choice-tag">إجابة الطالب</span>}
+                                  {c.is_correct && <span className="paper-choice-tag correct-tag">الإجابة الصحيحة</span>}
+                                </div>
+                              )
+                            })}
+                          </div>
+
+                          <div className="paper-explain">
+                            <span className="explain-title">الشرح:</span>
+                            <p>{q.explanation}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </td>
-                  <td className="student-date">{formatDate(s.submitted_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </TeacherLayout>

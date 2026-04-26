@@ -79,6 +79,7 @@ func main() {
 		r.Get("/api/assignments/{id}", h.GetAssignment)
 		r.Post("/api/assignments/{id}/submit", h.SubmitAssignment)
 		r.Get("/api/assignments/{id}/submissions", h.ListSubmissions)
+		r.Get("/api/submissions/{submissionId}", h.GetSubmission)
 	})
 
 	log.Printf("bayan server running on port %s", cfg.Port)
