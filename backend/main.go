@@ -59,6 +59,11 @@ func main() {
 
 		r.Post("/api/grades", h.CreateGrade)
 		r.Delete("/api/grades/{id}", h.DeleteGrade)
+
+		r.Get("/api/students", h.ListStudents)
+		r.Patch("/api/students/{id}/approve", h.ApproveStudent)
+		r.Patch("/api/students/{id}/block", h.BlockStudent)
+		r.Patch("/api/students/{id}/grade", h.ChangeStudentGrade)
 	})
 
 	log.Printf("bayan server running on port %s", cfg.Port)

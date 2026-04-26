@@ -109,3 +109,17 @@ type CreateGradeRequest struct {
 	NumericValue int    `json:"numeric_value"`
 	AcademicYear string `json:"academic_year"`
 }
+
+type StudentResponse struct {
+	ID           string    `json:"id"`
+	FullName     string    `json:"full_name"`
+	PhoneNumber  string    `json:"phone_number"`
+	GradeID      string    `json:"grade_id"`
+	GradeLabel   string    `json:"grade_label"`
+	Status       string    `json:"status"`
+	RegisteredAt time.Time `json:"registered_at"`
+}
+
+type ChangeGradeRequest struct {
+	GradeID string `json:"grade_id"`
+}
