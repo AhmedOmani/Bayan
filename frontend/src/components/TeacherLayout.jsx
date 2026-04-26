@@ -1,13 +1,21 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { api } from '../api'
+import { useToast } from '../context/ToastContext'
 import './TeacherLayout.css'
 
 function TeacherLayout({ children }) {
   const navigate = useNavigate()
   const location = useLocation()
+  const { showToast } = useToast()
 
-  function handleLogout() {
-    localStorage.removeItem('teacher_token')
+  async function handleLogout() {
+    try {
+      await api('/api/auth/teacher/logout', { method: 'POST' })
+    } catch (err) {
+      // ignore logout errors
+    }
     localStorage.removeItem('user')
+    showToast('تم تسجيل الخروج', 'info')
     navigate('/login')
   }
 

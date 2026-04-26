@@ -11,6 +11,28 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+func (h *Handler) setAuthCookie(w http.ResponseWriter, name, token string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     name,
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   86400,
+	})
+}
+
+func (h *Handler) clearAuthCookie(w http.ResponseWriter, name string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     name,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+	})
+}
+
 func (h *Handler) TeacherLogin(w http.ResponseWriter, r *http.Request) {
 	var req models.LoginRequest
 	if err := helpers.ReadJSON(r, &req); err != nil {
@@ -44,14 +66,20 @@ func (h *Handler) TeacherLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.setAuthCookie(w, "bayan_teacher", token)
+
 	helpers.JSON(w, http.StatusOK, map[string]interface{}{
-		"token": token,
 		"user": map[string]interface{}{
 			"id":    teacher.ID,
 			"name":  teacher.Name,
 			"email": teacher.Email,
 		},
 	})
+}
+
+func (h *Handler) TeacherLogout(w http.ResponseWriter, r *http.Request) {
+	h.clearAuthCookie(w, "bayan_teacher")
+	helpers.JSON(w, http.StatusOK, map[string]string{"message": "logged out"})
 }
 
 func (h *Handler) StudentRegister(w http.ResponseWriter, r *http.Request) {
@@ -168,8 +196,9 @@ func (h *Handler) StudentLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.setAuthCookie(w, "bayan_student", token)
+
 	helpers.JSON(w, http.StatusOK, map[string]interface{}{
-		"token": token,
 		"user": map[string]interface{}{
 			"id":        student.ID,
 			"full_name": student.FullName,
@@ -178,6 +207,11 @@ func (h *Handler) StudentLogin(w http.ResponseWriter, r *http.Request) {
 			"status":    student.Status,
 		},
 	})
+}
+
+func (h *Handler) StudentLogout(w http.ResponseWriter, r *http.Request) {
+	h.clearAuthCookie(w, "bayan_student")
+	helpers.JSON(w, http.StatusOK, map[string]string{"message": "logged out"})
 }
 
 func (h *Handler) generateToken(userID, role string) (string, error) {

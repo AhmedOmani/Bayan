@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
+import { useToast } from '../context/ToastContext'
 import TeacherLayout from '../components/TeacherLayout'
 import './Students.css'
 
@@ -10,6 +11,7 @@ function Students() {
   const [filterStatus, setFilterStatus] = useState('')
   const [filterGrade, setFilterGrade] = useState('')
   const navigate = useNavigate()
+  const { showToast } = useToast()
 
   useEffect(() => {
     const stored = localStorage.getItem('user')
@@ -41,26 +43,31 @@ function Students() {
       const data = await api(url)
       setStudents(data || [])
     } catch (err) {
-      console.error('failed to load students:', err)
+      if (err.message.includes('not authenticated')) {
+        navigate('/login')
+        return
+      }
+      showToast(err.message, 'error')
     }
   }
 
   async function handleApprove(id) {
     try {
       await api(`/api/students/${id}/approve`, { method: 'PATCH' })
+      showToast('تمت الموافقة على الطالب', 'success')
       loadStudents()
     } catch (err) {
-      alert(err.message)
+      showToast(err.message, 'error')
     }
   }
 
   async function handleBlock(id) {
-    if (!confirm('هل أنت متأكد من حظر هذا الطالب؟')) return
     try {
       await api(`/api/students/${id}/block`, { method: 'PATCH' })
+      showToast('تم حظر الطالب', 'success')
       loadStudents()
     } catch (err) {
-      alert(err.message)
+      showToast(err.message, 'error')
     }
   }
 

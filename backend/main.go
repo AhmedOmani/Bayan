@@ -47,9 +47,11 @@ func main() {
 
 	// public routes
 	r.Post("/api/auth/teacher/login", h.TeacherLogin)
+	r.Post("/api/auth/teacher/logout", h.TeacherLogout)
 	r.Post("/api/auth/student/register", h.StudentRegister)
 	r.Post("/api/auth/student/profiles", h.StudentProfiles)
 	r.Post("/api/auth/student/login", h.StudentLogin)
+	r.Post("/api/auth/student/logout", h.StudentLogout)
 	r.Get("/api/grades", h.ListGrades)
 
 	// teacher-only routes

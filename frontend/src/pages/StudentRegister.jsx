@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { api } from '../api'
+import { useToast } from '../context/ToastContext'
 import './StudentRegister.css'
 
 function StudentRegister() {
@@ -12,6 +13,7 @@ function StudentRegister() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const { showToast } = useToast()
 
   useEffect(() => {
     loadGrades()
@@ -22,7 +24,7 @@ function StudentRegister() {
       const data = await api('/api/grades')
       setGrades(data || [])
     } catch (err) {
-      console.error('failed to load grades:', err)
+      showToast('فشل في تحميل الصفوف', 'error')
     }
   }
 
@@ -42,6 +44,7 @@ function StudentRegister() {
         }),
       })
       setSuccess(true)
+      showToast('تم التسجيل بنجاح', 'success')
     } catch (err) {
       setError(err.message)
     } finally {

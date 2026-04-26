@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { api } from '../api'
+import { useToast } from '../context/ToastContext'
 import './StudentDashboard.css'
 
 function StudentDashboard() {
   const [student, setStudent] = useState(null)
   const navigate = useNavigate()
+  const { showToast } = useToast()
 
   useEffect(() => {
     const stored = localStorage.getItem('student')
@@ -15,9 +18,14 @@ function StudentDashboard() {
     setStudent(JSON.parse(stored))
   }, [])
 
-  function handleLogout() {
-    localStorage.removeItem('student_token')
+  async function handleLogout() {
+    try {
+      await api('/api/auth/student/logout', { method: 'POST' })
+    } catch (err) {
+      // ignore logout errors
+    }
     localStorage.removeItem('student')
+    showToast('تم تسجيل الخروج', 'info')
     navigate('/student/login')
   }
 

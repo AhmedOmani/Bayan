@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
+import { useToast } from '../context/ToastContext'
 import './TeacherLogin.css'
 
 function TeacherLogin() {
@@ -9,6 +10,7 @@ function TeacherLogin() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const { showToast } = useToast()
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -21,8 +23,8 @@ function TeacherLogin() {
         body: JSON.stringify({ email, password }),
       })
 
-      localStorage.setItem('teacher_token', data.token)
       localStorage.setItem('user', JSON.stringify(data.user))
+      showToast('تم تسجيل الدخول بنجاح', 'success')
       navigate('/dashboard')
     } catch (err) {
       setError(err.message)
