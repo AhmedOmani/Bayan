@@ -16,7 +16,7 @@ function StudentDashboard() {
   }, [])
 
   function handleLogout() {
-    localStorage.removeItem('token')
+    localStorage.removeItem('student_token')
     localStorage.removeItem('student')
     navigate('/student/login')
   }

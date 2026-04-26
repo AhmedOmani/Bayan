@@ -6,7 +6,7 @@ function TeacherLayout({ children }) {
   const location = useLocation()
 
   function handleLogout() {
-    localStorage.removeItem('token')
+    localStorage.removeItem('teacher_token')
     localStorage.removeItem('user')
     navigate('/login')
   }

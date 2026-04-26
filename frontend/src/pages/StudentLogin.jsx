@@ -57,7 +57,7 @@ function StudentLogin() {
         }),
       })
 
-      localStorage.setItem('token', data.token)
+      localStorage.setItem('student_token', data.token)
       localStorage.setItem('student', JSON.stringify(data.user))
       navigate('/student/dashboard')
     } catch (err) {
