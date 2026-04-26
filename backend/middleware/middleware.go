@@ -38,11 +38,45 @@ func Auth(jwtSecret string) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var tokenStr string
 
-			// check cookies first (teacher then student)
-			if c, err := r.Cookie("bayan_teacher"); err == nil {
-				tokenStr = c.Value
-			} else if c, err := r.Cookie("bayan_student"); err == nil {
-				tokenStr = c.Value
+			teacherCookie, tErr := r.Cookie("bayan_teacher")
+			studentCookie, sErr := r.Cookie("bayan_student")
+
+			// if both cookies exist, prefer based on route
+			if tErr == nil && sErr == nil {
+				if strings.HasPrefix(r.URL.Path, "/api/auth/student") ||
+					strings.Contains(r.URL.Path, "/submit") {
+					tokenStr = studentCookie.Value
+				} else {
+					// try to figure out from the token roles
+					// for shared routes like /api/assignments, check student first
+					// then teacher
+					sClaims := parseToken(studentCookie.Value, jwtSecret)
+					tClaims := parseToken(teacherCookie.Value, jwtSecret)
+
+					if sClaims != nil && tClaims != nil {
+						// both valid - use path hints
+						if strings.HasPrefix(r.URL.Path, "/api/students") ||
+							strings.HasPrefix(r.URL.Path, "/api/grades") {
+							tokenStr = teacherCookie.Value
+						} else {
+							// for /api/assignments GET, check referer or default to teacher
+							referer := r.Header.Get("Referer")
+							if strings.Contains(referer, "/student/") {
+								tokenStr = studentCookie.Value
+							} else {
+								tokenStr = teacherCookie.Value
+							}
+						}
+					} else if sClaims != nil {
+						tokenStr = studentCookie.Value
+					} else {
+						tokenStr = teacherCookie.Value
+					}
+				}
+			} else if tErr == nil {
+				tokenStr = teacherCookie.Value
+			} else if sErr == nil {
+				tokenStr = studentCookie.Value
 			}
 
 			// fallback to Authorization header
@@ -82,6 +116,20 @@ func Auth(jwtSecret string) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func parseToken(tokenStr string, secret string) jwt.MapClaims {
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		return []byte(secret), nil
+	})
+	if err != nil || !token.Valid {
+		return nil
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil
+	}
+	return claims
 }
 
 func TeacherOnly(next http.Handler) http.Handler {
