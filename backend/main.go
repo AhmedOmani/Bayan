@@ -53,6 +53,7 @@ func main() {
 	r.Post("/api/auth/student/login", h.StudentLogin)
 	r.Post("/api/auth/student/logout", h.StudentLogout)
 	r.Get("/api/grades", h.ListGrades)
+	r.Get("/api/health", h.HealthCheck)
 
 	// teacher-only routes
 	r.Group(func(r chi.Router) {

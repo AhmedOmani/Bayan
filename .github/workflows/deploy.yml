@@ -1,0 +1,73 @@
+name: Deploy Bayan
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # build frontend
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npx vite build
+
+      # build backend
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Build backend
+        working-directory: backend
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bayan .
+
+      # deploy to server
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Upload binary
+        run: scp -i ~/.ssh/deploy_key backend/bayan root@${{ secrets.VPS_HOST }}:/opt/bayan/bayan-new
+
+      - name: Upload frontend
+        run: scp -i ~/.ssh/deploy_key -r frontend/dist root@${{ secrets.VPS_HOST }}:/opt/bayan/frontend-dist-new
+
+      - name: Switch and restart
+        run: |
+          ssh -i ~/.ssh/deploy_key root@${{ secrets.VPS_HOST }} '
+            # swap binary
+            mv /opt/bayan/bayan-new /opt/bayan/bayan
+            chmod +x /opt/bayan/bayan
+
+            # swap frontend
+            rm -rf /opt/bayan/frontend-dist
+            mv /opt/bayan/frontend-dist-new /opt/bayan/frontend-dist
+
+            # restart backend
+            systemctl restart bayan
+            sleep 2
+            systemctl is-active bayan
+          '
+
+      - name: Health check
+        run: |
+          sleep 3
+          curl -sf http://${{ secrets.VPS_HOST }}/api/health || echo "WARNING: health check failed"
