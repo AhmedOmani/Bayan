@@ -28,6 +28,7 @@
   --glass-bg: rgba(31, 43, 71, 0.6);
   --glass-border: rgba(212, 168, 83, 0.1);
   --transition: 0.2s ease;
+  color-scheme: dark;
 }
 
 *,
@@ -144,6 +145,20 @@ input, textarea, select {
 
 .input::placeholder {
   color: var(--text-muted);
+}
+
+/* date/time inputs */
+input[type="datetime-local"],
+input[type="date"],
+input[type="time"] {
+  cursor: pointer;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7) sepia(1) saturate(3) hue-rotate(10deg);
+  cursor: pointer;
 }
 
 .badge {
