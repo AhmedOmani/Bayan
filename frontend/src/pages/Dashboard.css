@@ -46,11 +46,18 @@
   margin-bottom: 28px;
 }
 
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
 .section-title {
   font-family: var(--font-content);
   font-size: 1.2rem;
   font-weight: 600;
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 .empty-state {
@@ -62,19 +69,53 @@
   border-radius: var(--radius-md);
 }
 
+.empty-hint {
+  font-size: 0.85rem;
+  margin-top: 8px;
+  color: var(--text-secondary);
+}
+
+/* grade form */
+.grade-form {
+  margin-bottom: 20px;
+  padding: 20px;
+}
+
+.grade-form-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.grade-form .form-group label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+/* grades grid */
 .grades-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 14px;
 }
 
 .grade-card {
   transition: all var(--transition);
+  position: relative;
 }
 
 .grade-card:hover {
   border-color: var(--border-strong);
   transform: translateY(-2px);
+}
+
+.grade-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
 .grade-card h3 {
@@ -86,4 +127,71 @@
 .grade-year {
   font-size: 0.8rem;
   color: var(--text-secondary);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.grade-num {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* delete button */
+.btn-delete-grade {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all var(--transition);
+  opacity: 0;
+}
+
+.grade-card:hover .btn-delete-grade {
+  opacity: 1;
+}
+
+.btn-delete-grade:hover {
+  color: var(--error);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* delete confirmation */
+.delete-confirm {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-confirm-yes {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--error);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 2px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-family: var(--font-ui);
+  transition: all var(--transition);
+}
+
+.btn-confirm-yes:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.btn-confirm-no {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  padding: 2px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-family: var(--font-ui);
+  transition: all var(--transition);
+}
+
+.btn-confirm-no:hover {
+  border-color: var(--border-strong);
 }

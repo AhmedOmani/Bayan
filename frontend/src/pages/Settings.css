@@ -1,0 +1,61 @@
+.settings-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 600px;
+}
+
+.settings-card {
+  padding: 28px;
+}
+
+.settings-section-title {
+  font-family: var(--font-content);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.account-info {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.info-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.info-value {
+  font-family: var(--font-content);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.password-form .form-group label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.password-form .btn-primary {
+  align-self: flex-start;
+  margin-top: 8px;
+}

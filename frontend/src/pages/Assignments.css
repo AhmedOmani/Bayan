@@ -4,6 +4,105 @@
   align-items: center;
 }
 
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* import button */
+.btn-import {
+  background: rgba(212, 168, 83, 0.12);
+  color: var(--accent-gold);
+  border: 1px solid rgba(212, 168, 83, 0.25);
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.btn-import:hover {
+  background: rgba(212, 168, 83, 0.2);
+  border-color: rgba(212, 168, 83, 0.4);
+}
+
+/* import step - URL input */
+.import-step {
+  padding: 40px 32px;
+  text-align: center;
+}
+
+.import-step-title {
+  font-family: var(--font-content);
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.import-step-desc {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 24px;
+}
+
+.import-url-row {
+  display: flex;
+  gap: 12px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.import-url-input {
+  flex: 1;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+/* import preview */
+.import-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.import-meta {
+  padding: 28px;
+}
+
+.import-form-title {
+  font-family: var(--font-content);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.import-fetched-count {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.import-fetched-count strong {
+  color: var(--accent-gold);
+}
+
+.import-questions-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.empty-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
 /* assignment grid */
 .assignments-grid {
   display: grid;
@@ -543,3 +642,99 @@
   color: var(--error);
 }
 
+/* grade change dropdown on assignment card */
+.grade-change-select {
+  background: rgba(212, 168, 83, 0.1);
+  color: var(--accent-gold);
+  border: 1px solid rgba(212, 168, 83, 0.25);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.grade-change-select:hover {
+  background: rgba(212, 168, 83, 0.2);
+  border-color: rgba(212, 168, 83, 0.4);
+}
+
+/* section header with button */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+/* add question / add choice buttons */
+.btn-secondary {
+  background: rgba(212, 168, 83, 0.1);
+  color: var(--accent-gold);
+  border: 1px dashed rgba(212, 168, 83, 0.4);
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.btn-secondary:hover {
+  background: rgba(212, 168, 83, 0.2);
+  border-color: var(--accent-gold);
+}
+
+.btn-add-choice {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all var(--transition);
+}
+.btn-add-choice:hover {
+  color: var(--accent-gold);
+  border-color: rgba(212, 168, 83, 0.3);
+}
+
+/* edit and delete buttons on cards */
+.btn-edit {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+.btn-edit:hover {
+  background: rgba(59, 130, 246, 0.25);
+}
+
+.btn-delete {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  font-size: 0.72rem;
+}
+.btn-delete:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+/* delete assignment header button */
+.btn-delete-assignment {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.btn-delete-assignment:hover {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.4);
+}

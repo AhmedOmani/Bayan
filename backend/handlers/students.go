@@ -90,6 +90,24 @@ func (h *Handler) BlockStudent(w http.ResponseWriter, r *http.Request) {
 	helpers.JSON(w, http.StatusOK, map[string]string{"message": "student blocked"})
 }
 
+func (h *Handler) UnblockStudent(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	result, err := h.db.Exec("UPDATE students SET status = 'ACTIVE' WHERE id = $1 AND status = 'BLOCKED'", id)
+	if err != nil {
+		helpers.Error(w, http.StatusInternalServerError, "something went wrong")
+		return
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		helpers.Error(w, http.StatusNotFound, "student not found or not blocked")
+		return
+	}
+
+	helpers.JSON(w, http.StatusOK, map[string]string{"message": "student unblocked"})
+}
+
 func (h *Handler) ChangeStudentGrade(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 

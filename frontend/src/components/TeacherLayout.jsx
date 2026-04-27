@@ -23,6 +23,7 @@ function TeacherLayout({ children }) {
     { path: '/dashboard', label: 'الرئيسية' },
     { path: '/students', label: 'الطلاب' },
     { path: '/assignments', label: 'الواجبات' },
+    { path: '/settings', label: 'الإعدادات' },
   ]
 
   return (

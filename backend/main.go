@@ -38,7 +38,7 @@ func main() {
 		log.Println("default teacher created - email: admin@bayan.com, password: admin123")
 	}
 
-	h := handlers.New(database, cfg.JWTSecret)
+	h := handlers.New(database, cfg.JWTSecret, cfg.GoogleAPIKey)
 
 	r := chi.NewRouter()
 	r.Use(chimw.Logger)
@@ -66,10 +66,17 @@ func main() {
 		r.Get("/api/students", h.ListStudents)
 		r.Patch("/api/students/{id}/approve", h.ApproveStudent)
 		r.Patch("/api/students/{id}/block", h.BlockStudent)
+		r.Patch("/api/students/{id}/unblock", h.UnblockStudent)
 		r.Patch("/api/students/{id}/grade", h.ChangeStudentGrade)
 
 		r.Post("/api/assignments", h.CreateAssignment)
+		r.Post("/api/import/google-form", h.ImportGoogleForm)
 		r.Post("/api/assignments/{id}/publish", h.PublishAssignment)
+		r.Put("/api/assignments/{id}", h.UpdateAssignment)
+		r.Delete("/api/assignments/{id}", h.DeleteAssignment)
+		r.Patch("/api/assignments/{id}/grade", h.UpdateAssignmentGrade)
+
+		r.Patch("/api/auth/teacher/password", h.ChangePassword)
 	})
 
 	// authenticated routes (teacher or student)

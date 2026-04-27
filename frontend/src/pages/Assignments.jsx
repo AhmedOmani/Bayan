@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useToast } from '../context/ToastContext'
 import TeacherLayout from '../components/TeacherLayout'
+import ConfirmModal from '../components/ConfirmModal'
 import './Assignments.css'
 
 function Assignments() {
@@ -10,7 +11,10 @@ function Assignments() {
   const [grades, setGrades] = useState([])
   const [filterGrade, setFilterGrade] = useState('')
   const [showBuilder, setShowBuilder] = useState(false)
+  const [showImporter, setShowImporter] = useState(false)
   const [viewSubmissions, setViewSubmissions] = useState(null)
+  const [editAssignment, setEditAssignment] = useState(null)
+  const [confirmModal, setConfirmModal] = useState(null)
   const navigate = useNavigate()
   const { showToast } = useToast()
 
@@ -62,6 +66,38 @@ function Assignments() {
     }
   }
 
+  async function handleChangeGrade(assignmentId, newGradeId) {
+    try {
+      await api(`/api/assignments/${assignmentId}/grade`, {
+        method: 'PATCH',
+        body: JSON.stringify({ grade_id: newGradeId }),
+      })
+      showToast('تم تحديث الصف', 'success')
+      loadAssignments()
+    } catch (err) {
+      showToast(err.message, 'error')
+    }
+  }
+
+  function handleDelete(id) {
+    setConfirmModal({
+      title: 'حذف الواجب',
+      message: 'هل أنت متأكد من حذف هذا الواجب؟ لا يمكن التراجع عن هذا الإجراء.',
+      confirmText: 'حذف',
+      danger: true,
+      onConfirm: async () => {
+        setConfirmModal(null)
+        try {
+          await api(`/api/assignments/${id}`, { method: 'DELETE' })
+          showToast('تم حذف الواجب', 'success')
+          loadAssignments()
+        } catch (err) {
+          showToast(err.message, 'error')
+        }
+      },
+    })
+  }
+
   function formatDate(dateStr) {
     return new Date(dateStr).toLocaleDateString('ar-OM', {
       year: 'numeric',
@@ -88,6 +124,31 @@ function Assignments() {
     )
   }
 
+  if (showImporter) {
+    return (
+      <GoogleFormImporter
+        grades={grades}
+        onBack={() => {
+          setShowImporter(false)
+          loadAssignments()
+        }}
+      />
+    )
+  }
+
+  if (editAssignment) {
+    return (
+      <AssignmentEditor
+        assignmentId={editAssignment}
+        grades={grades}
+        onBack={() => {
+          setEditAssignment(null)
+          loadAssignments()
+        }}
+      />
+    )
+  }
+
   if (viewSubmissions) {
     return (
       <SubmissionsViewer
@@ -98,13 +159,19 @@ function Assignments() {
   }
 
   return (
-    <TeacherLayout>
+    <>
+      <TeacherLayout>
       <header className="page-header">
         <div className="header-row">
           <h1>الواجبات</h1>
-          <button className="btn-primary" onClick={() => setShowBuilder(true)}>
-            + واجب جديد
-          </button>
+          <div className="header-actions">
+            <button className="btn-import" onClick={() => setShowImporter(true)}>
+              استيراد من Google Forms
+            </button>
+            <button className="btn-primary" onClick={() => setShowBuilder(true)}>
+              + واجب جديد
+            </button>
+          </div>
         </div>
       </header>
 
@@ -124,9 +191,14 @@ function Assignments() {
       {assignments.length === 0 ? (
         <div className="empty-state">
           <p>لا توجد واجبات حالياً</p>
-          <button className="btn-primary" onClick={() => setShowBuilder(true)}>
-            إنشاء أول واجب
-          </button>
+          <div className="empty-actions">
+            <button className="btn-import" onClick={() => setShowImporter(true)}>
+              استيراد من Google Forms
+            </button>
+            <button className="btn-primary" onClick={() => setShowBuilder(true)}>
+              إنشاء واجب يدوياً
+            </button>
+          </div>
         </div>
       ) : (
         <div className="assignments-grid">
@@ -139,10 +211,21 @@ function Assignments() {
                 </span>
               </div>
 
-              <h3 className="card-title">{a.title}</h3>
+              <h3 className="card-title" onClick={() => setEditAssignment(a.id)} style={{ cursor: 'pointer' }}>{a.title}</h3>
 
               <div className="card-meta">
-                <span className="meta-item">{a.grade_label}</span>
+                <select
+                  className="grade-change-select"
+                  value={a.grade_id}
+                  onChange={(e) => {
+                    e.stopPropagation()
+                    handleChangeGrade(a.id, e.target.value)
+                  }}
+                >
+                  {grades.map((g) => (
+                    <option key={g.id} value={g.id}>{g.label}</option>
+                  ))}
+                </select>
                 <span className="meta-item">{a.question_count} سؤال</span>
                 <span className="meta-item">{a.submission_count} تسليم</span>
               </div>
@@ -154,6 +237,12 @@ function Assignments() {
               </div>
 
               <div className="card-actions">
+                <button
+                  className="btn-action btn-edit"
+                  onClick={() => setEditAssignment(a.id)}
+                >
+                  تعديل
+                </button>
                 {!a.is_published && (
                   <button
                     className="btn-action btn-publish"
@@ -170,9 +259,375 @@ function Assignments() {
                     التسليمات ({a.submission_count})
                   </button>
                 )}
+                <button
+                  className="btn-action btn-delete"
+                  onClick={() => handleDelete(a.id)}
+                >
+                  حذف
+                </button>
               </div>
             </div>
           ))}
+        </div>
+      )}
+      </TeacherLayout>
+
+      {confirmModal && (
+        <ConfirmModal
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmText={confirmModal.confirmText}
+          cancelText={confirmModal.cancelText}
+          danger={confirmModal.danger}
+          onConfirm={confirmModal.onConfirm}
+          onCancel={() => setConfirmModal(null)}
+        />
+      )}
+    </>
+  )
+}
+
+// Google Form Importer component
+function GoogleFormImporter({ grades, onBack }) {
+  const [formURL, setFormURL] = useState('')
+  const [preview, setPreview] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [title, setTitle] = useState('')
+  const [gradeId, setGradeId] = useState('')
+  const [deadline, setDeadline] = useState('')
+  const [questions, setQuestions] = useState([])
+  const { showToast } = useToast()
+
+  const GOOGLE_CLIENT_ID = '794150470653-n2g3epd0u61rialqk4b0pchs0beog169.apps.googleusercontent.com'
+
+  async function fetchWithToken(accessToken = '') {
+    try {
+      const data = await api('/api/import/google-form', {
+        method: 'POST',
+        body: JSON.stringify({
+          form_url: formURL,
+          access_token: accessToken,
+        }),
+      })
+      setTitle(data.form_title || '')
+      setQuestions(data.questions || [])
+      setPreview(true)
+      const note = data.needs_answer_key ? ' — حدد الإجابات الصحيحة قبل الحفظ' : ''
+      showToast(`تم جلب ${data.questions.length} سؤال بنجاح${note}`, 'success')
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function handleFetch() {
+    if (!formURL) {
+      showToast('الصق رابط Google Form أولاً', 'error')
+      return
+    }
+
+    setLoading(true)
+
+    // detect URL type — public response URLs don't need OAuth
+    const isResponseURL = formURL.includes('/d/e/')
+
+    if (isResponseURL) {
+      // scrape public form — no sign-in needed
+      fetchWithToken('')
+    } else {
+      // edit URL — need Google OAuth
+      if (!window.google?.accounts?.oauth2) {
+        showToast('Google Identity Services not loaded yet — try again', 'error')
+        setLoading(false)
+        return
+      }
+
+      const tokenClient = window.google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/forms.body.readonly',
+        callback: (response) => {
+          if (response.error) {
+            showToast('فشل تسجيل الدخول بـ Google', 'error')
+            setLoading(false)
+            return
+          }
+          fetchWithToken(response.access_token)
+        },
+      })
+      tokenClient.requestAccessToken()
+    }
+  }
+
+  function removeQuestion(index) {
+    setQuestions(questions.filter((_, i) => i !== index))
+  }
+
+  function addQuestion() {
+    setQuestions([
+      ...questions,
+      {
+        question_text: '',
+        explanation: '',
+        choices: [
+          { choice_text: '', is_correct: true },
+          { choice_text: '', is_correct: false },
+          { choice_text: '', is_correct: false },
+          { choice_text: '', is_correct: false },
+        ],
+      },
+    ])
+  }
+
+  function addChoice(qIndex) {
+    const updated = [...questions]
+    updated[qIndex].choices.push({ choice_text: '', is_correct: false })
+    setQuestions(updated)
+  }
+
+  function updateQuestionText(index, text) {
+    const updated = [...questions]
+    updated[index].question_text = text
+    setQuestions(updated)
+  }
+
+  function updateExplanation(index, text) {
+    const updated = [...questions]
+    updated[index].explanation = text
+    setQuestions(updated)
+  }
+
+  function updateChoiceText(qIndex, cIndex, text) {
+    const updated = [...questions]
+    updated[qIndex].choices[cIndex].choice_text = text
+    setQuestions(updated)
+  }
+
+  function setCorrectChoice(qIndex, cIndex) {
+    const updated = [...questions]
+    updated[qIndex].choices = updated[qIndex].choices.map((c, i) => ({
+      ...c,
+      is_correct: i === cIndex,
+    }))
+    setQuestions(updated)
+  }
+
+  function removeChoice(qIndex, cIndex) {
+    const updated = [...questions]
+    if (updated[qIndex].choices.length <= 2) return
+    updated[qIndex].choices = updated[qIndex].choices.filter((_, i) => i !== cIndex)
+    setQuestions(updated)
+  }
+
+  async function handleSave() {
+    if (!title || !gradeId || !deadline) {
+      showToast('العنوان والصف والموعد مطلوبة', 'error')
+      return
+    }
+    if (questions.length === 0) {
+      showToast('يجب أن يكون هناك سؤال واحد على الأقل', 'error')
+      return
+    }
+
+    // validate all questions have text and choices
+    for (let i = 0; i < questions.length; i++) {
+      if (!questions[i].question_text) {
+        showToast(`السؤال ${i + 1} بدون نص`, 'error')
+        return
+      }
+      for (let j = 0; j < questions[i].choices.length; j++) {
+        if (!questions[i].choices[j].choice_text) {
+          showToast(`الاختيار ${j + 1} في السؤال ${i + 1} فارغ`, 'error')
+          return
+        }
+      }
+    }
+
+    setSaving(true)
+    try {
+      await api('/api/assignments', {
+        method: 'POST',
+        body: JSON.stringify({
+          title,
+          description: '',
+          grade_id: gradeId,
+          deadline: new Date(deadline).toISOString(),
+          questions: questions.map((q) => ({
+            question_text: q.question_text,
+            explanation: q.explanation || '',
+            choices: q.choices,
+          })),
+        }),
+      })
+      showToast('تم إنشاء الواجب بنجاح من Google Forms!', 'success')
+      onBack()
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <TeacherLayout>
+      <header className="page-header">
+        <div className="header-row">
+          <h1>استيراد من Google Forms</h1>
+          <button className="btn-secondary" onClick={onBack}>رجوع</button>
+        </div>
+      </header>
+
+      {!preview ? (
+        <div className="import-step glass">
+          <h2 className="import-step-title">استيراد أسئلة من Google Forms</h2>
+          <p className="import-step-desc">
+            الصق أي رابط Google Form — رابط التعديل أو رابط الإجابة
+          </p>
+          <div className="import-url-row">
+            <input
+              type="url"
+              className="input import-url-input"
+              placeholder="https://docs.google.com/forms/d/..."
+              value={formURL}
+              onChange={(e) => setFormURL(e.target.value)}
+              dir="ltr"
+            />
+            <button
+              className="btn-primary"
+              onClick={handleFetch}
+              disabled={loading}
+            >
+              {loading ? 'جاري الجلب...' : 'جلب الأسئلة'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="import-preview">
+          <div className="import-meta glass">
+            <h2 className="import-form-title">{title}</h2>
+            <p className="import-fetched-count">
+              تم جلب <strong>{questions.length}</strong> سؤال — يمكنك حذف أو تعديل أي سؤال قبل الحفظ
+            </p>
+
+            <div className="meta-grid">
+              <div className="form-group">
+                <label>عنوان الواجب</label>
+                <input
+                  type="text"
+                  className="input"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label>الصف</label>
+                <select
+                  className="input"
+                  value={gradeId}
+                  onChange={(e) => setGradeId(e.target.value)}
+                >
+                  <option value="">اختر الصف</option>
+                  {grades.map((g) => (
+                    <option key={g.id} value={g.id}>{g.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>الموعد النهائي</label>
+                <input
+                  type="datetime-local"
+                  className="input"
+                  value={deadline}
+                  onChange={(e) => setDeadline(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="import-questions-section">
+            <div className="section-header">
+              <h2>الأسئلة ({questions.length})</h2>
+              <button className="btn-secondary" onClick={addQuestion}>+ إضافة سؤال</button>
+            </div>
+
+            {questions.map((q, qIndex) => (
+              <div key={qIndex} className="question-card glass">
+                <div className="question-top">
+                  <span className="question-number">سؤال {qIndex + 1}</span>
+                  <button
+                    className="btn-remove"
+                    onClick={() => removeQuestion(qIndex)}
+                  >
+                    حذف السؤال
+                  </button>
+                </div>
+
+                <div className="form-group">
+                  <label>نص السؤال</label>
+                  <textarea
+                    className="input textarea"
+                    value={q.question_text}
+                    onChange={(e) => updateQuestionText(qIndex, e.target.value)}
+                    rows={2}
+                  />
+                </div>
+
+                <div className="choices-section">
+                  <label>الاختيارات (اضغط الدائرة لتحديد الإجابة الصحيحة)</label>
+                  {q.choices.map((c, cIndex) => (
+                    <div key={cIndex} className="choice-row">
+                      <button
+                        className={`choice-radio ${c.is_correct ? 'correct' : ''}`}
+                        onClick={() => setCorrectChoice(qIndex, cIndex)}
+                        title="تحديد كإجابة صحيحة"
+                      >
+                        {c.is_correct ? '✓' : ''}
+                      </button>
+                      <input
+                        type="text"
+                        className="input choice-input"
+                        value={c.choice_text}
+                        onChange={(e) => updateChoiceText(qIndex, cIndex, e.target.value)}
+                      />
+                      {q.choices.length > 2 && (
+                        <button
+                          className="btn-remove-choice"
+                          onClick={() => removeChoice(qIndex, cIndex)}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button className="btn-add-choice" onClick={() => addChoice(qIndex)}>
+                    + إضافة اختيار
+                  </button>
+                </div>
+
+                <div className="form-group">
+                  <label>الشرح (اختياري — يظهر بعد التسليم)</label>
+                  <textarea
+                    className="input textarea"
+                    placeholder="اشرح الإجابة الصحيحة..."
+                    value={q.explanation || ''}
+                    onChange={(e) => updateExplanation(qIndex, e.target.value)}
+                    rows={2}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="builder-footer">
+            <button
+              className="btn-primary btn-lg"
+              onClick={handleSave}
+              disabled={saving || questions.length === 0}
+            >
+              {saving ? 'جاري الحفظ...' : `حفظ الواجب (${questions.length} سؤال)`}
+            </button>
+          </div>
         </div>
       )}
     </TeacherLayout>
@@ -603,6 +1058,348 @@ function SubmissionsViewer({ assignment, onBack }) {
         </div>
       )}
     </TeacherLayout>
+  )
+}
+
+// ── Assignment Editor (full CRUD) ──
+function AssignmentEditor({ assignmentId, grades, onBack }) {
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [title, setTitle] = useState('')
+  const [gradeId, setGradeId] = useState('')
+  const [deadline, setDeadline] = useState('')
+  const [questions, setQuestions] = useState([])
+  const { showToast } = useToast()
+
+  useEffect(() => {
+    loadAssignment()
+  }, [])
+
+  async function loadAssignment() {
+    try {
+      const data = await api(`/api/assignments/${assignmentId}`)
+      setTitle(data.title)
+      setGradeId(data.grade_id)
+      // format deadline for datetime-local input
+      const d = new Date(data.deadline)
+      const pad = (n) => String(n).padStart(2, '0')
+      setDeadline(
+        `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+      )
+      setQuestions(
+        (data.questions || []).map((q) => ({
+          question_text: q.question_text,
+          explanation: q.explanation || '',
+          choices: (q.choices || []).map((c) => ({
+            choice_text: c.choice_text,
+            is_correct: c.is_correct,
+          })),
+        }))
+      )
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function removeQuestion(index) {
+    setQuestions(questions.filter((_, i) => i !== index))
+  }
+
+  function addQuestion() {
+    setQuestions([
+      ...questions,
+      {
+        question_text: '',
+        explanation: '',
+        choices: [
+          { choice_text: '', is_correct: true },
+          { choice_text: '', is_correct: false },
+          { choice_text: '', is_correct: false },
+          { choice_text: '', is_correct: false },
+        ],
+      },
+    ])
+  }
+
+  function addChoice(qIndex) {
+    const updated = [...questions]
+    updated[qIndex].choices.push({ choice_text: '', is_correct: false })
+    setQuestions(updated)
+  }
+
+  function updateQuestionText(index, text) {
+    const updated = [...questions]
+    updated[index].question_text = text
+    setQuestions(updated)
+  }
+
+  function updateExplanation(index, text) {
+    const updated = [...questions]
+    updated[index].explanation = text
+    setQuestions(updated)
+  }
+
+  function updateChoiceText(qIndex, cIndex, text) {
+    const updated = [...questions]
+    updated[qIndex].choices[cIndex].choice_text = text
+    setQuestions(updated)
+  }
+
+  function setCorrectChoice(qIndex, cIndex) {
+    const updated = [...questions]
+    updated[qIndex].choices = updated[qIndex].choices.map((c, i) => ({
+      ...c,
+      is_correct: i === cIndex,
+    }))
+    setQuestions(updated)
+  }
+
+  function removeChoice(qIndex, cIndex) {
+    const updated = [...questions]
+    if (updated[qIndex].choices.length <= 2) return
+    updated[qIndex].choices = updated[qIndex].choices.filter((_, i) => i !== cIndex)
+    setQuestions(updated)
+  }
+
+  async function handleSave() {
+    if (!title || !gradeId || !deadline) {
+      showToast('العنوان والصف والموعد مطلوبة', 'error')
+      return
+    }
+    if (questions.length === 0) {
+      showToast('يجب أن يكون هناك سؤال واحد على الأقل', 'error')
+      return
+    }
+
+    for (let i = 0; i < questions.length; i++) {
+      if (!questions[i].question_text) {
+        showToast(`السؤال ${i + 1} بدون نص`, 'error')
+        return
+      }
+      const correct = questions[i].choices.filter((c) => c.is_correct).length
+      if (correct !== 1) {
+        showToast(`السؤال ${i + 1} يحتاج إجابة صحيحة واحدة`, 'error')
+        return
+      }
+      for (let j = 0; j < questions[i].choices.length; j++) {
+        if (!questions[i].choices[j].choice_text) {
+          showToast(`السؤال ${i + 1} — الاختيار ${j + 1} فارغ`, 'error')
+          return
+        }
+      }
+    }
+
+    setSaving(true)
+    try {
+      await api(`/api/assignments/${assignmentId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          title,
+          description: '',
+          grade_id: gradeId,
+          deadline: new Date(deadline).toISOString(),
+          questions: questions.map((q) => ({
+            question_text: q.question_text,
+            explanation: q.explanation || '',
+            choices: q.choices.map((c) => ({
+              choice_text: c.choice_text,
+              is_correct: c.is_correct,
+            })),
+          })),
+        }),
+      })
+      showToast('تم حفظ التغييرات', 'success')
+      onBack()
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const [confirmModal, setConfirmModal] = useState(null)
+
+  function handleDelete() {
+    setConfirmModal({
+      title: 'حذف الواجب نهائياً',
+      message: 'سيتم حذف الواجب وجميع أسئلته. لا يمكن التراجع عن هذا الإجراء.',
+      confirmText: 'حذف نهائي',
+      danger: true,
+      onConfirm: async () => {
+        setConfirmModal(null)
+        try {
+          await api(`/api/assignments/${assignmentId}`, { method: 'DELETE' })
+          showToast('تم حذف الواجب', 'success')
+          onBack()
+        } catch (err) {
+          showToast(err.message, 'error')
+        }
+      },
+    })
+  }
+
+  if (loading) {
+    return (
+      <TeacherLayout>
+        <p style={{ textAlign: 'center', padding: '60px', color: 'var(--text-secondary)' }}>
+          جاري التحميل...
+        </p>
+      </TeacherLayout>
+    )
+  }
+
+  return (
+    <>
+    <TeacherLayout>
+      <header className="page-header">
+        <div className="header-row">
+          <h1>تعديل الواجب</h1>
+          <div className="header-actions">
+            <button className="btn-delete-assignment" onClick={handleDelete}>
+              حذف الواجب
+            </button>
+            <button className="btn-primary" onClick={onBack}>
+              رجوع
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="import-preview">
+        <div className="import-meta glass">
+          <h2 className="import-form-title">{title}</h2>
+
+          <div className="import-meta-fields">
+            <div className="form-group">
+              <label>عنوان الواجب</label>
+              <input
+                type="text"
+                className="input"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label>الصف</label>
+              <select
+                className="input"
+                value={gradeId}
+                onChange={(e) => setGradeId(e.target.value)}
+              >
+                <option value="">اختر الصف</option>
+                {grades.map((g) => (
+                  <option key={g.id} value={g.id}>{g.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>الموعد النهائي</label>
+              <input
+                type="datetime-local"
+                className="input"
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="import-questions-section">
+          <div className="section-header">
+            <h2>الأسئلة ({questions.length})</h2>
+            <button className="btn-secondary" onClick={addQuestion}>+ إضافة سؤال</button>
+          </div>
+
+          {questions.map((q, qIndex) => (
+            <div key={qIndex} className="question-card glass">
+              <div className="question-top">
+                <span className="question-number">سؤال {qIndex + 1}</span>
+                <button
+                  className="btn-remove-question"
+                  onClick={() => removeQuestion(qIndex)}
+                >
+                  حذف السؤال
+                </button>
+              </div>
+
+              <div className="form-group">
+                <label>نص السؤال</label>
+                <textarea
+                  className="input textarea"
+                  value={q.question_text}
+                  onChange={(e) => updateQuestionText(qIndex, e.target.value)}
+                  rows={2}
+                />
+              </div>
+
+              <div className="choices-section">
+                <label>الاختيارات (اضغط الدائرة لتحديد الإجابة الصحيحة)</label>
+                {q.choices.map((c, cIndex) => (
+                  <div key={cIndex} className="choice-row">
+                    <button
+                      className={`choice-radio ${c.is_correct ? 'correct' : ''}`}
+                      onClick={() => setCorrectChoice(qIndex, cIndex)}
+                      title="تحديد كإجابة صحيحة"
+                    >
+                      {c.is_correct ? '✓' : ''}
+                    </button>
+                    <input
+                      type="text"
+                      className="input choice-input"
+                      value={c.choice_text}
+                      onChange={(e) => updateChoiceText(qIndex, cIndex, e.target.value)}
+                    />
+                    {q.choices.length > 2 && (
+                      <button
+                        className="btn-remove-choice"
+                        onClick={() => removeChoice(qIndex, cIndex)}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button className="btn-add-choice" onClick={() => addChoice(qIndex)}>
+                  + إضافة اختيار
+                </button>
+              </div>
+
+              <div className="form-group">
+                <label>الشرح (اختياري — يظهر بعد التسليم)</label>
+                <textarea
+                  className="input textarea"
+                  placeholder="اشرح الإجابة الصحيحة..."
+                  value={q.explanation || ''}
+                  onChange={(e) => updateExplanation(qIndex, e.target.value)}
+                  rows={2}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="import-save-row">
+          <button className="btn-primary save-btn" onClick={handleSave} disabled={saving}>
+            {saving ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+          </button>
+        </div>
+      </div>
+    </TeacherLayout>
+
+      {confirmModal && (
+        <ConfirmModal
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmText={confirmModal.confirmText}
+          cancelText={confirmModal.cancelText}
+          danger={confirmModal.danger}
+          onConfirm={confirmModal.onConfirm}
+          onCancel={() => setConfirmModal(null)}
+        />
+      )}
+    </>
   )
 }
 

@@ -3,6 +3,7 @@ import TeacherLogin from './pages/TeacherLogin'
 import Dashboard from './pages/Dashboard'
 import Students from './pages/Students'
 import Assignments from './pages/Assignments'
+import Settings from './pages/Settings'
 import StudentRegister from './pages/StudentRegister'
 import StudentLogin from './pages/StudentLogin'
 import StudentDashboard from './pages/StudentDashboard'
@@ -18,6 +19,7 @@ function App() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/students" element={<Students />} />
       <Route path="/assignments" element={<Assignments />} />
+      <Route path="/settings" element={<Settings />} />
 
       {/* student */}
       <Route path="/register" element={<StudentRegister />} />

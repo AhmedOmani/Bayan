@@ -121,6 +121,36 @@ func (h *Handler) CreateAssignment(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *Handler) UpdateAssignmentGrade(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	var req struct {
+		GradeID string `json:"grade_id"`
+	}
+	if err := helpers.ReadJSON(r, &req); err != nil {
+		helpers.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if req.GradeID == "" {
+		helpers.Error(w, http.StatusBadRequest, "grade_id is required")
+		return
+	}
+
+	result, err := h.db.Exec("UPDATE assignments SET grade_id = $1 WHERE id = $2", req.GradeID, id)
+	if err != nil {
+		helpers.Error(w, http.StatusInternalServerError, "something went wrong")
+		return
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		helpers.Error(w, http.StatusNotFound, "assignment not found")
+		return
+	}
+
+	helpers.JSON(w, http.StatusOK, map[string]string{"message": "assignment grade updated"})
+}
+
 func (h *Handler) ListAssignments(w http.ResponseWriter, r *http.Request) {
 	role := r.Context().Value(middleware.RoleKey).(string)
 
@@ -308,4 +338,170 @@ func (h *Handler) PublishAssignment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	helpers.JSON(w, http.StatusOK, map[string]string{"message": "assignment published"})
+}
+
+func (h *Handler) UpdateAssignment(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	var req models.CreateAssignmentRequest
+	if err := helpers.ReadJSON(r, &req); err != nil {
+		helpers.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if req.Title == "" || req.GradeID == "" || req.Deadline == "" {
+		helpers.Error(w, http.StatusBadRequest, "title, grade_id, and deadline are required")
+		return
+	}
+	if len(req.Questions) == 0 {
+		helpers.Error(w, http.StatusBadRequest, "at least one question is required")
+		return
+	}
+
+	// validate questions
+	for _, q := range req.Questions {
+		if q.QuestionText == "" {
+			helpers.Error(w, http.StatusBadRequest, "question text is required for all questions")
+			return
+		}
+		if len(q.Choices) < 2 {
+			helpers.Error(w, http.StatusBadRequest, "each question needs at least 2 choices")
+			return
+		}
+		correctCount := 0
+		for _, c := range q.Choices {
+			if c.ChoiceText == "" {
+				helpers.Error(w, http.StatusBadRequest, "choice text cannot be empty")
+				return
+			}
+			if c.IsCorrect {
+				correctCount++
+			}
+		}
+		if correctCount != 1 {
+			helpers.Error(w, http.StatusBadRequest, "each question must have exactly 1 correct answer")
+			return
+		}
+	}
+
+	deadline, err := time.Parse(time.RFC3339, req.Deadline)
+	if err != nil {
+		helpers.Error(w, http.StatusBadRequest, "invalid deadline format")
+		return
+	}
+
+	tx, err := h.db.Begin()
+	if err != nil {
+		helpers.Error(w, http.StatusInternalServerError, "something went wrong")
+		return
+	}
+	defer tx.Rollback()
+
+	// update assignment metadata
+	result, err := tx.Exec(
+		`UPDATE assignments SET title = $1, description = $2, grade_id = $3, deadline = $4 WHERE id = $5`,
+		req.Title, req.Description, req.GradeID, deadline, id,
+	)
+	if err != nil {
+		helpers.Error(w, http.StatusInternalServerError, "failed to update assignment")
+		return
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		helpers.Error(w, http.StatusNotFound, "assignment not found")
+		return
+	}
+
+	// delete old answers → choices → questions (answers FK references question_id and choice_id without CASCADE)
+	_, err = tx.Exec(`DELETE FROM answers WHERE question_id IN (SELECT id FROM questions WHERE assignment_id = $1)`, id)
+	if err != nil {
+		helpers.Error(w, http.StatusInternalServerError, "failed to clear old answers")
+		return
+	}
+	_, err = tx.Exec(`DELETE FROM choices WHERE question_id IN (SELECT id FROM questions WHERE assignment_id = $1)`, id)
+	if err != nil {
+		helpers.Error(w, http.StatusInternalServerError, "failed to clear old choices")
+		return
+	}
+	_, err = tx.Exec(`DELETE FROM questions WHERE assignment_id = $1`, id)
+	if err != nil {
+		helpers.Error(w, http.StatusInternalServerError, "failed to clear old questions")
+		return
+	}
+
+	// insert new questions and choices
+	for order, q := range req.Questions {
+		var questionID string
+		err = tx.QueryRow(
+			`INSERT INTO questions (assignment_id, question_text, explanation, display_order)
+			 VALUES ($1, $2, $3, $4) RETURNING id`,
+			id, q.QuestionText, q.Explanation, order+1,
+		).Scan(&questionID)
+		if err != nil {
+			helpers.Error(w, http.StatusInternalServerError, "failed to create question")
+			return
+		}
+
+		for cOrder, c := range q.Choices {
+			_, err = tx.Exec(
+				`INSERT INTO choices (question_id, choice_text, is_correct, display_order)
+				 VALUES ($1, $2, $3, $4)`,
+				questionID, c.ChoiceText, c.IsCorrect, cOrder+1,
+			)
+			if err != nil {
+				helpers.Error(w, http.StatusInternalServerError, "failed to create choice")
+				return
+			}
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		helpers.Error(w, http.StatusInternalServerError, "failed to save changes")
+		return
+	}
+
+	helpers.JSON(w, http.StatusOK, map[string]string{"message": "assignment updated"})
+}
+
+func (h *Handler) DeleteAssignment(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	// check for existing submissions
+	var subCount int
+	h.db.QueryRow("SELECT COUNT(*) FROM submissions WHERE assignment_id = $1", id).Scan(&subCount)
+	if subCount > 0 {
+		helpers.Error(w, http.StatusBadRequest, "لا يمكن حذف واجب لديه تسليمات — يمكنك إلغاء نشره بدلاً من ذلك")
+		return
+	}
+
+	tx, err := h.db.Begin()
+	if err != nil {
+		helpers.Error(w, http.StatusInternalServerError, "something went wrong")
+		return
+	}
+	defer tx.Rollback()
+
+	// cascade delete: answers → submissions → choices → questions → assignment
+	tx.Exec(`DELETE FROM answers WHERE submission_id IN (SELECT id FROM submissions WHERE assignment_id = $1)`, id)
+	tx.Exec(`DELETE FROM submissions WHERE assignment_id = $1`, id)
+	tx.Exec(`DELETE FROM choices WHERE question_id IN (SELECT id FROM questions WHERE assignment_id = $1)`, id)
+	tx.Exec(`DELETE FROM questions WHERE assignment_id = $1`, id)
+	result, err := tx.Exec(`DELETE FROM assignments WHERE id = $1`, id)
+	if err != nil {
+		helpers.Error(w, http.StatusInternalServerError, "failed to delete assignment")
+		return
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		helpers.Error(w, http.StatusNotFound, "assignment not found")
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		helpers.Error(w, http.StatusInternalServerError, "failed to delete assignment")
+		return
+	}
+
+	helpers.JSON(w, http.StatusOK, map[string]string{"message": "assignment deleted"})
 }

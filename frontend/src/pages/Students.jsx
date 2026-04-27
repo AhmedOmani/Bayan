@@ -71,6 +71,16 @@ function Students() {
     }
   }
 
+  async function handleUnblock(id) {
+    try {
+      await api(`/api/students/${id}/unblock`, { method: 'PATCH' })
+      showToast('تم رفع الحظر عن الطالب', 'success')
+      loadStudents()
+    } catch (err) {
+      showToast(err.message, 'error')
+    }
+  }
+
   function getStatusBadge(status) {
     const labels = {
       PENDING: 'بانتظار الموافقة',
@@ -162,6 +172,14 @@ function Students() {
                         onClick={() => handleBlock(s.id)}
                       >
                         حظر
+                      </button>
+                    )}
+                    {s.status === 'BLOCKED' && (
+                      <button
+                        className="btn-action btn-approve"
+                        onClick={() => handleUnblock(s.id)}
+                      >
+                        رفع الحظر
                       </button>
                     )}
                   </td>
