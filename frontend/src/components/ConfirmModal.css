@@ -116,3 +116,24 @@
 .confirm-btn-danger:hover {
   filter: brightness(1.15);
 }
+
+/* ═══ MOBILE ═══ */
+@media (max-width: 768px) {
+  .confirm-modal {
+    min-width: auto;
+    max-width: calc(100vw - 32px);
+    margin: 0 16px;
+    padding: 24px 20px;
+  }
+
+  .confirm-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .confirm-btn-cancel,
+  .confirm-btn-ok {
+    width: 100%;
+    padding: 12px;
+  }
+}

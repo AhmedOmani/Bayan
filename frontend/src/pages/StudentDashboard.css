@@ -162,3 +162,45 @@
   background: rgba(239, 68, 68, 0.1);
   border-radius: var(--radius-sm);
 }
+
+/* ═══ MOBILE ═══ */
+@media (max-width: 768px) {
+  .student-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    margin: 8px;
+  }
+
+  .student-header-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .student-main {
+    padding: 12px 16px 40px;
+  }
+
+  .welcome-section {
+    padding: 40px 16px;
+  }
+
+  .welcome-section h2 {
+    font-size: 1.3rem;
+  }
+
+  .student-assignments-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .student-assignment-card {
+    padding: 16px;
+  }
+
+  .card-footer {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}

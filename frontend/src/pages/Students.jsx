@@ -150,14 +150,14 @@ function Students() {
             <tbody>
               {students.map((s) => (
                 <tr key={s.id}>
-                  <td className="student-name">{s.full_name}</td>
-                  <td className="student-phone">{s.phone_number}</td>
-                  <td>{s.grade_label}</td>
-                  <td>{getStatusBadge(s.status)}</td>
-                  <td className="student-date">
+                  <td className="student-name" data-label="الاسم">{s.full_name}</td>
+                  <td className="student-phone" data-label="الهاتف">{s.phone_number}</td>
+                  <td data-label="الصف">{s.grade_label}</td>
+                  <td data-label="الحالة">{getStatusBadge(s.status)}</td>
+                  <td className="student-date" data-label="التسجيل">
                     {new Date(s.registered_at).toLocaleDateString('ar-OM')}
                   </td>
-                  <td className="actions">
+                  <td className="actions" data-label="إجراءات">
                     {s.status === 'PENDING' && (
                       <button
                         className="btn-action btn-approve"

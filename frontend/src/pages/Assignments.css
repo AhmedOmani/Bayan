@@ -738,3 +738,156 @@
   background: rgba(239, 68, 68, 0.22);
   border-color: rgba(239, 68, 68, 0.4);
 }
+
+/* ═══ MOBILE ═══ */
+@media (max-width: 768px) {
+  .header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .header-actions .btn-primary,
+  .header-actions .btn-import {
+    flex: 1;
+    text-align: center;
+    padding: 10px 12px;
+    font-size: 0.82rem;
+  }
+
+  /* assignment cards grid */
+  .assignments-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .assignment-card {
+    padding: 16px;
+    gap: 10px;
+  }
+
+  .card-meta {
+    gap: 8px;
+  }
+
+  .card-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .card-actions .btn-action {
+    flex: 1;
+    text-align: center;
+    min-width: 0;
+  }
+
+  .grade-change-select {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* import step */
+  .import-step {
+    padding: 24px 16px;
+  }
+
+  .import-url-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .import-url-row .btn-primary {
+    width: 100%;
+  }
+
+  /* import preview / editor */
+  .import-meta {
+    padding: 16px;
+  }
+
+  .import-meta-fields {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .import-meta-fields .form-group {
+    width: 100%;
+  }
+
+  .question-card {
+    padding: 16px;
+  }
+
+  .question-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .choice-row {
+    gap: 8px;
+  }
+
+  .choice-input {
+    min-width: 0;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .import-save-row {
+    padding: 0;
+  }
+
+  .import-save-row .save-btn {
+    width: 100%;
+  }
+
+  /* filter */
+  .filter-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .filter-row select {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* builder meta grid */
+  .builder-meta-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* submissions viewer */
+  .submissions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .submission-card {
+    padding: 14px;
+  }
+
+  .paper-question {
+    padding: 14px;
+  }
+
+  .paper-choices {
+    gap: 6px;
+  }
+
+  /* delete assignment header button */
+  .btn-delete-assignment {
+    width: 100%;
+    text-align: center;
+  }
+}

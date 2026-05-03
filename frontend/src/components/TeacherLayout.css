@@ -3,6 +3,7 @@
   min-height: 100vh;
 }
 
+/* ── Desktop sidebar ── */
 .sidebar {
   width: 240px;
   background: var(--bg-secondary);
@@ -14,6 +15,7 @@
   right: 0;
   top: 0;
   bottom: 0;
+  z-index: 100;
 }
 
 .sidebar-brand {
@@ -66,4 +68,123 @@
   flex: 1;
   margin-right: 240px;
   padding: 36px;
+}
+
+/* ── Mobile top bar (hidden on desktop) ── */
+.mobile-topbar {
+  display: none;
+}
+
+/* ── Mobile overlay (hidden on desktop) ── */
+.mobile-overlay {
+  display: none;
+}
+
+/* ── Hamburger button ── */
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.hamburger:hover {
+  border-color: var(--accent-gold);
+}
+
+.hamburger span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: var(--text-secondary);
+  border-radius: 1px;
+  transition: all 0.3s ease;
+}
+
+.hamburger.open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+  background: var(--accent-gold);
+}
+
+.hamburger.open span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger.open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+  background: var(--accent-gold);
+}
+
+/* ═══════════════════════════════════════
+   MOBILE — max-width: 768px
+   ═══════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Show mobile top bar */
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 90;
+  }
+
+  .topbar-brand {
+    font-family: var(--font-content);
+    font-size: 1.3rem;
+    color: var(--accent-gold);
+    font-weight: 700;
+  }
+
+  /* Hide sidebar by default, slide in when open */
+  .sidebar {
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    width: 260px;
+    z-index: 200;
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-brand {
+    display: none;
+  }
+
+  /* Overlay */
+  .mobile-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 150;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Main content adjustments */
+  .main-content {
+    margin-right: 0;
+    padding: 16px;
+    padding-top: 72px; /* space for topbar */
+  }
 }

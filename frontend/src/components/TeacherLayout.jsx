@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../api'
 import { useToast } from '../context/ToastContext'
 import './TeacherLayout.css'
 
 function TeacherLayout({ children }) {
+  const [menuOpen, setMenuOpen] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   const { showToast } = useToast()
@@ -26,9 +28,34 @@ function TeacherLayout({ children }) {
     { path: '/settings', label: 'الإعدادات' },
   ]
 
+  function navigateTo(path) {
+    navigate(path)
+    setMenuOpen(false)
+  }
+
   return (
     <div className="layout">
-      <aside className="sidebar">
+      {/* Mobile top bar */}
+      <header className="mobile-topbar">
+        <h2 className="topbar-brand">بيان</h2>
+        <button
+          className={`hamburger ${menuOpen ? 'open' : ''}`}
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label="القائمة"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </header>
+
+      {/* Mobile overlay */}
+      {menuOpen && (
+        <div className="mobile-overlay" onClick={() => setMenuOpen(false)} />
+      )}
+
+      {/* Sidebar — desktop always visible, mobile slide-in */}
+      <aside className={`sidebar ${menuOpen ? 'sidebar-open' : ''}`}>
         <div className="sidebar-brand">
           <h2>بيان</h2>
         </div>
@@ -40,7 +67,7 @@ function TeacherLayout({ children }) {
               className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
               onClick={(e) => {
                 e.preventDefault()
-                navigate(item.path)
+                navigateTo(item.path)
               }}
             >
               {item.label}
@@ -51,6 +78,7 @@ function TeacherLayout({ children }) {
           تسجيل الخروج
         </button>
       </aside>
+
       <main className="main-content">{children}</main>
     </div>
   )
